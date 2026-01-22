@@ -1,12 +1,28 @@
-## USTB-OS-Rustlings
+# USTB Operating System Course - Rustlings
 
-本项目基于[Rustlings](https://rustlings.rust-lang.org/) 修改而得，有增删。同时参考了[开源操作系统社区](https://opencamp.cn/os2edu/camp/)的版本。
+This project contains some exercises to get you used to reading and writing Rust code, designed for the USTB Operating System course. It is based on [Rustlings](https://github.com/rust-lang/rustlings).
+
+## Installation
+
+First, ensure you have Rust installed. Then, install the local `rustlings` tool:
 
 ```bash
 cargo install --force --path .
-rustlings verify
-
-rustlings help
 ```
 
-注意有些测试仅需要通过编译，而另一部分测试需要通过 `assert!()`
+## Usage
+
+> [!NOTE]
+> **Delete the line** `// I AM NOT DONE` to mark it as complete.
+
+Run the following command to start the **interactive** "watch" mode. It will automatically re-run tests when you save files.
+
+```bash
+rustlings watch
+```
+
+Other commands:
+
+- **Check all exercises**: `rustlings verify`
+- **Run a specific exercise**: `rustlings run <name>`
+- **Get a hint**: `rustlings hint <name>`
