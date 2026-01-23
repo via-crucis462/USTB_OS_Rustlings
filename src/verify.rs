@@ -1,4 +1,5 @@
 use crate::exercise::{CompiledExercise, Exercise, Mode, State};
+use crate::ui::clear_screen;
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::env;
@@ -14,7 +15,7 @@ pub fn verify<'a>(
     verbose: bool,
     success_hints: bool,
 ) -> Result<(), &'a Exercise> {
-    let (num_done, total) = progress;
+    let (mut num_done, total) = progress;
     let bar = ProgressBar::new(total as u64);
     let mut percentage = num_done as f32 / total as f32 * 100.0;
     bar.set_style(ProgressStyle::default_bar()
@@ -24,7 +25,14 @@ pub fn verify<'a>(
     bar.set_position(num_done as u64);
     bar.set_message(format!("({:.1} %)", percentage));
 
+    let mut first_exercise = true;
     for exercise in exercises {
+        // Clear screen before showing next exercise (except the first one)
+        if !first_exercise {
+            clear_screen();
+        }
+        first_exercise = false;
+
         let compile_result = match exercise.mode {
             Mode::Test => compile_and_test(exercise, RunMode::Interactive, verbose, success_hints),
             Mode::Compile => compile_and_run_interactively(exercise, success_hints),
@@ -33,12 +41,39 @@ pub fn verify<'a>(
 
         };
         if !compile_result.unwrap_or(false) {
+            bar.finish_and_clear();
+            // Show progress bar and interactive prompt after error
+            println!();
+            
+            let bar_width: usize = 60;
+            let filled = if total > 0 {
+                (percentage / 100.0 * bar_width as f32).ceil() as usize
+            } else {
+                0
+            };
+            let empty = bar_width.saturating_sub(filled);
+
+            println!(
+                "Progress: [{}{}] {}/{} ({:.1} %)",
+                std::iter::repeat("#").take(filled).collect::<String>(),
+                std::iter::repeat("-").take(empty).collect::<String>(),
+                num_done,
+                total,
+                percentage
+            );
+            println!();
+            println!("Current exercise: {}", exercise.path.display());
+            println!();
+            show_interactive_prompt();
+
             return Err(exercise);
         }
-        percentage += 100.0 / total as f32;
+        num_done += 1;
+        percentage = num_done as f32 / total as f32 * 100.0;
         bar.inc(1);
         bar.set_message(format!("({:.1} %)", percentage));
     }
+    bar.finish_and_clear();
     Ok(())
 }
 
@@ -215,9 +250,24 @@ fn prompt_for_completion(exercise: &Exercise, prompt_output: Option<String>, suc
         );
     }
 
+    println!();
+
     false
 }
 
 fn separator() -> console::StyledObject<&'static str> {
     style("====================").bold()
+}
+
+fn show_interactive_prompt() {
+    println!();
+    print!("{}:hint / {}:list / {}:check all / {}:reset / {}:quit ? ",
+        style("h").bold(),
+        style("l").bold(),
+        style("c").bold(),
+        style("x").bold(),
+        style("q").bold()
+    );
+    use std::io::{self, Write};
+    io::stdout().flush().unwrap();
 }

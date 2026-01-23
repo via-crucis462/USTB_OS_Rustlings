@@ -1,6 +1,7 @@
 use crate::exercise::{Exercise, ExerciseList};
 use crate::project::RustAnalyzerProject;
 use crate::run::{reset, run};
+use crate::ui::clear_screen;
 use crate::verify::verify;
 use argh::FromArgs;
 use console::Emoji;
@@ -380,31 +381,40 @@ fn spawn_watch_shell(
     should_quit: Arc<AtomicBool>,
 ) {
     let failed_exercise_hint = Arc::clone(failed_exercise_hint);
-    println!("Welcome to watch mode! You can type 'help' to get an overview of the commands you can use here.");
     thread::spawn(move || loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
                 let input = input.trim();
-                if input == "hint" {
+                if input == "hint" || input == "h" {
                     if let Some(hint) = &*failed_exercise_hint.lock().unwrap() {
                         println!("{hint}");
                     }
                 } else if input == "clear" {
                     println!("\x1B[2J\x1B[1;1H");
-                } else if input.eq("quit") {
+                } else if input.eq("quit") || input.eq("q") {
                     should_quit.store(true, Ordering::SeqCst);
                     println!("Bye!");
                 } else if input.eq("help") {
-                    println!("Commands available to you in watch mode:");
-                    println!("  hint   - prints the current exercise's hint");
-                    println!("  clear  - clears the screen");
-                    println!("  quit   - quits watch mode");
-                    println!("  !<cmd> - executes a command, like `!rustc --explain E0381`");
-                    println!("  help   - displays this help message");
+                    println!("  h/hint   - prints the current exercise's hint");
+                    println!("  l/list   - lists all exercises and their status");
+                    println!("  c        - checks all exercises");
+                    println!("  x/reset  - resets the current exercise (not implemented)");
+                    println!("  q/quit   - quits watch mode");
+                    println!("  clear    - clears the screen");
+                    println!("  !<cmd>   - executes a command, like `!rustc --explain E0381`");
+                    println!("  help     - displays this help message");
                     println!();
                     println!("Watch mode automatically re-evaluates the current exercise");
                     println!("when you edit a file's contents.")
+                } else if input.eq("list") || input.eq("l") {
+                    println!("List command not yet implemented in current watch mode.");
+                    println!("You can run `rustlings list` in a separate terminal.");
+                } else if input.eq("c") {
+                    println!("Check all command not yet implemented in current watch mode.");
+                } else if input.eq("reset") || input.eq("x") {
+                    println!("Reset command not yet implemented in current watch mode.");
+                    println!("You can run `rustlings reset <exercise>` in a separate terminal.");
                 } else if let Some(cmd) = input.strip_prefix('!') {
                     let parts: Vec<&str> = cmd.split_whitespace().collect();
                     if parts.is_empty() {
@@ -412,8 +422,9 @@ fn spawn_watch_shell(
                     } else if let Err(e) = Command::new(parts[0]).args(&parts[1..]).status() {
                         println!("failed to execute command `{}`: {}", cmd, e);
                     }
-                } else {
+                } else if !input.is_empty() {
                     println!("unknown command: {input}");
+                    println!("Type 'help' for available commands.");
                 }
             }
             Err(error) => println!("error reading command: {error}"),
@@ -452,11 +463,6 @@ fn watch(
     verbose: bool,
     success_hints: bool,
 ) -> notify::Result<WatchStatus> {
-    /* Clears the terminal with an ANSI escape code.
-    Works in UNIX and newer Windows terminals. */
-    fn clear_screen() {
-        println!("\x1Bc");
-    }
 
     let (tx, rx) = channel();
     let should_quit = Arc::new(AtomicBool::new(false));
@@ -465,6 +471,9 @@ fn watch(
     watcher.watch(Path::new("./exercises"), RecursiveMode::Recursive)?;
 
     clear_screen();
+
+    println!("Welcome to watch mode! You can type 'help' to get an overview of the commands you can use here.");
+    println!();
 
     let to_owned_hint = |t: &Exercise| t.hint.to_owned();
     let failed_exercise_hint = match verify(

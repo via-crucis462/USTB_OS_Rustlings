@@ -212,7 +212,6 @@ path = "{}.rs""#,
             }),
             _ => "",
         };
-        println!("pa={}", temp_file());
         let cmd = Command::new(&temp_file())
             .arg(arg)
             .output()

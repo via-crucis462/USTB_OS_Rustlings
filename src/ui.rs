@@ -31,3 +31,9 @@ macro_rules! success {
         }
     }};
 }
+
+/// Clears the terminal with an ANSI escape code.
+/// Works in UNIX and newer Windows terminals.
+pub fn clear_screen() {
+    println!("\x1Bc");
+}
