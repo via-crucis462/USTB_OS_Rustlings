@@ -1,7 +1,7 @@
 use crate::exercise::{Exercise, ExerciseList};
 use crate::project::RustAnalyzerProject;
 use crate::run::{reset, run};
-use crate::ui::clear_screen;
+use crate::ui::{clear_screen, show_interactive_prompt};
 use crate::verify::verify;
 use argh::FromArgs;
 use console::Emoji;
@@ -386,35 +386,27 @@ fn spawn_watch_shell(
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
                 let input = input.trim();
-                if input == "hint" || input == "h" {
+                if input.eq("hint") || input.eq("h") {
                     if let Some(hint) = &*failed_exercise_hint.lock().unwrap() {
                         println!("{hint}");
                     }
-                } else if input == "clear" {
+                    show_interactive_prompt();
+                } else if input.eq("clear") {
                     println!("\x1B[2J\x1B[1;1H");
+                    show_interactive_prompt();
                 } else if input.eq("quit") || input.eq("q") {
                     should_quit.store(true, Ordering::SeqCst);
                     println!("Bye!");
-                } else if input.eq("help") {
+                } else if input.eq("help") || input.eq("e") {
                     println!("  h/hint   - prints the current exercise's hint");
-                    println!("  l/list   - lists all exercises and their status");
-                    println!("  c        - checks all exercises");
-                    println!("  x/reset  - resets the current exercise (not implemented)");
                     println!("  q/quit   - quits watch mode");
                     println!("  clear    - clears the screen");
                     println!("  !<cmd>   - executes a command, like `!rustc --explain E0381`");
                     println!("  help     - displays this help message");
                     println!();
                     println!("Watch mode automatically re-evaluates the current exercise");
-                    println!("when you edit a file's contents.")
-                } else if input.eq("list") || input.eq("l") {
-                    println!("List command not yet implemented in current watch mode.");
-                    println!("You can run `rustlings list` in a separate terminal.");
-                } else if input.eq("c") {
-                    println!("Check all command not yet implemented in current watch mode.");
-                } else if input.eq("reset") || input.eq("x") {
-                    println!("Reset command not yet implemented in current watch mode.");
-                    println!("You can run `rustlings reset <exercise>` in a separate terminal.");
+                    println!("when you edit a file's contents.");
+                    show_interactive_prompt();
                 } else if let Some(cmd) = input.strip_prefix('!') {
                     let parts: Vec<&str> = cmd.split_whitespace().collect();
                     if parts.is_empty() {
@@ -422,9 +414,11 @@ fn spawn_watch_shell(
                     } else if let Err(e) = Command::new(parts[0]).args(&parts[1..]).status() {
                         println!("failed to execute command `{}`: {}", cmd, e);
                     }
+                    show_interactive_prompt();
                 } else if !input.is_empty() {
                     println!("unknown command: {input}");
                     println!("Type 'help' for available commands.");
+                    show_interactive_prompt();
                 }
             }
             Err(error) => println!("error reading command: {error}"),

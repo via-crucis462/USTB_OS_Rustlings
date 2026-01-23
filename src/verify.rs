@@ -1,5 +1,5 @@
 use crate::exercise::{CompiledExercise, Exercise, Mode, State};
-use crate::ui::clear_screen;
+use crate::ui::show_interactive_prompt;
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::env;
@@ -19,20 +19,13 @@ pub fn verify<'a>(
     let bar = ProgressBar::new(total as u64);
     let mut percentage = num_done as f32 / total as f32 * 100.0;
     bar.set_style(ProgressStyle::default_bar()
-        .template("Progress: [{bar:60.green/red}] {pos}/{len} {msg}")
+        .template("Progress: [{bar:60.green/red}]   {pos}/{len}")
         .progress_chars("#>-")
     );
     bar.set_position(num_done as u64);
     bar.set_message(format!("({:.1} %)", percentage));
 
-    let mut first_exercise = true;
     for exercise in exercises {
-        // Clear screen before showing next exercise (except the first one)
-        if !first_exercise {
-            clear_screen();
-        }
-        first_exercise = false;
-
         let compile_result = match exercise.mode {
             Mode::Test => compile_and_test(exercise, RunMode::Interactive, verbose, success_hints),
             Mode::Compile => compile_and_run_interactively(exercise, success_hints),
@@ -44,7 +37,8 @@ pub fn verify<'a>(
             bar.finish_and_clear();
             // Show progress bar and interactive prompt after error
             println!();
-            
+            println!();
+                        
             let bar_width: usize = 60;
             let filled = if total > 0 {
                 (percentage / 100.0 * bar_width as f32).ceil() as usize
@@ -53,17 +47,20 @@ pub fn verify<'a>(
             };
             let empty = bar_width.saturating_sub(filled);
 
+            let mut filled_str = String::new();
+            if filled > 0 {
+                filled_str.push_str(&"#".repeat(filled - 1));
+                filled_str.push('>');
+            }
+
             println!(
-                "Progress: [{}{}] {}/{} ({:.1} %)",
-                std::iter::repeat("#").take(filled).collect::<String>(),
-                std::iter::repeat("-").take(empty).collect::<String>(),
+                "Progress: [{}{}]   {}/{}",
+                style(filled_str).green(),
+                style("-".repeat(empty)).red(),
                 num_done,
-                total,
-                percentage
+                total
             );
-            println!();
-            println!("Current exercise: {}", exercise.path.display());
-            println!();
+            println!("Current exercise: {}", style(exercise.path.display()).blue().underlined());
             show_interactive_prompt();
 
             return Err(exercise);
@@ -257,17 +254,4 @@ fn prompt_for_completion(exercise: &Exercise, prompt_output: Option<String>, suc
 
 fn separator() -> console::StyledObject<&'static str> {
     style("====================").bold()
-}
-
-fn show_interactive_prompt() {
-    println!();
-    print!("{}:hint / {}:list / {}:check all / {}:reset / {}:quit ? ",
-        style("h").bold(),
-        style("l").bold(),
-        style("c").bold(),
-        style("x").bold(),
-        style("q").bold()
-    );
-    use std::io::{self, Write};
-    io::stdout().flush().unwrap();
 }

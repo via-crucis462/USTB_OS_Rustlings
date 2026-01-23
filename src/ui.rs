@@ -1,3 +1,5 @@
+use console::style;
+
 macro_rules! warn {
     ($fmt:literal, $ex:expr) => {{
         use console::{style, Emoji};
@@ -36,4 +38,15 @@ macro_rules! success {
 /// Works in UNIX and newer Windows terminals.
 pub fn clear_screen() {
     println!("\x1Bc");
+}
+
+pub fn show_interactive_prompt() {
+    println!();
+    print!("{}:hint / {}: help / {}:quit ? ",
+        style("h").bold(),
+        style("e").bold(),
+        style("q").bold(),
+    );
+    use std::io::{self, Write};
+    io::stdout().flush().unwrap();
 }
