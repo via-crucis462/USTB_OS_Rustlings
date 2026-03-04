@@ -26,3 +26,14 @@ Other commands:
 - **Check all exercises**: `rustlings verify`
 - **Run a specific exercise**: `rustlings run <name>`
 - **Get a hint**: `rustlings hint <name>`
+
+## Judge
+
+Please execute following commands:
+
+```shell
+cd /path/to/ustb-os-rustlings
+tar -czf ../ustb-os-rustlings.tar.gz .
+```
+
+Then submit `ustb-os-rustlings.tar.gz` to the online judge platform.
